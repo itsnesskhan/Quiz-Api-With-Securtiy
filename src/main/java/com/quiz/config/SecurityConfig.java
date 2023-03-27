@@ -4,6 +4,7 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 
 import org.aspectj.weaver.ast.And;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -41,6 +42,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	@Autowired
 	private JwtAuthenticationFilter authenticationFilter;
+	
+	@Value("${spring.security.isenabled}")
+	private boolean isEnabled;
 
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -52,7 +56,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		http.
+		System.out.println(isEnabled);
+		if (isEnabled) {
+			http.
 			csrf().disable()
 			.cors().
 			and()
@@ -75,6 +81,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		
 		http.addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class);
 		http.addFilterBefore(jwtLogoutFilter, UsernamePasswordAuthenticationFilter.class);
+		}
+		
+		else {
+			http
+			.csrf().disable()
+			.authorizeRequests()
+			.anyRequest()
+			.permitAll();
+
+		}
 	}
 
 	@Bean

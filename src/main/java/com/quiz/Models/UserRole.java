@@ -4,8 +4,10 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import lombok.Builder;
 import lombok.ToString;
 
+@Builder
 @ToString
 @Entity
 @Table(name = "roles")

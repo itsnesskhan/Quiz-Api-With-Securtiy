@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -40,55 +41,60 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	
 	@Autowired
 	private JwtAuthEntryPoint jwtAuthEntryPoint;
+	
+	@Value("${spring.security.isenabled}")
+	private boolean isEnabled;
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 
-		String username = null;
-		String token = null;
+		if (isEnabled) {
+			String username = null;
+			String token = null;
 
-		String requestToken = request.getHeader("Authorization");
+			String requestToken = request.getHeader("Authorization");
 
-		if (requestToken != null && requestToken.startsWith("Bearer")) {
-			token = requestToken.substring(7);
-			try {
-				username = jwtUtil.extractUsername(token);
-			} catch (IllegalArgumentException e) {
+			if (requestToken != null && requestToken.startsWith("Bearer")) {
+				token = requestToken.substring(7);
+				try {
+					username = jwtUtil.extractUsername(token);
+				} catch (IllegalArgumentException e) {
 
-				throw new IllegalArgumentException("unable to get jwt token");
-			} catch (ExpiredJwtException e) {
-				logger.error("token authentication failed "+e.getMessage());
-				jwtAuthEntryPoint.commence(request, response, e);
-				return;
+					throw new IllegalArgumentException("unable to get jwt token");
+				} catch (ExpiredJwtException e) {
+					logger.error("token authentication failed "+e.getMessage());
+					jwtAuthEntryPoint.commence(request, response, e);
+					return;
 
-			} catch (MalformedJwtException e) {
+				} catch (MalformedJwtException e) {
 
-				throw new MalformedJwtException("Invalid Jwt " + e.getMessage());
-			}
+					throw new MalformedJwtException("Invalid Jwt " + e.getMessage());
+				}
 
-		} else {
-			log.error("jwt token doesn't begin with Bearer");
-		}
-
-		if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-			UserDetails userDetails = myUserDetailsService.loadUserByUsername(username);
-
-			boolean isValid = this.jwtUtil.validateToken(token, userDetails);
-			if (isValid) {
-
-				UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-						userDetails, null, userDetails.getAuthorities());
-				usernamePasswordAuthenticationToken
-						.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-				SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
 			} else {
-				log.error("Invalid Jwt");
+				log.error("jwt token doesn't begin with Bearer");
 			}
-		} else {
-			log.error("username is null or context is not null");
-		}
 
+			if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+				UserDetails userDetails = myUserDetailsService.loadUserByUsername(username);
+
+				boolean isValid = this.jwtUtil.validateToken(token, userDetails);
+				if (isValid) {
+
+					UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
+							userDetails, null, userDetails.getAuthorities());
+					usernamePasswordAuthenticationToken
+							.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+					SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+				} else {
+					log.error("Invalid Jwt");
+				}
+			} else {
+				log.error("username is null or context is not null");
+			}
+
+		}
 		filterChain.doFilter(request, response);
 	}
 

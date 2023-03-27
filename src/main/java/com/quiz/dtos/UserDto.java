@@ -1,24 +1,18 @@
 package com.quiz.dtos;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 
 import javax.persistence.Embedded;
 
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.web.multipart.MultipartFile;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.quiz.Models.Name;
 import com.quiz.Models.UserRole;
 
-import antlr.collections.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
