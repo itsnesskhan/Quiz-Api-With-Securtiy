@@ -44,7 +44,7 @@ import com.quiz.dtos.UserDto;
 import com.quiz.helper.imageUploder;
 
 @Controller
-@RequestMapping("/student")
+@RequestMapping("/api/v1")
 @CrossOrigin("*")
 public class StudentController {
 
@@ -61,13 +61,13 @@ public class StudentController {
 	@Value("${project.image}")
 	private String proppath;
 
-	@GetMapping("/{stuId}")
+	@GetMapping("/student/{stuId}")
 	public ResponseEntity<UserDto> getStudent(@PathVariable("stuId") Integer stuId) {
 		UserDto user = this.studentServices.getStudentById(stuId);
 		return new ResponseEntity<UserDto>(user, HttpStatus.OK);
 	}
 
-	@PostMapping("")
+	@PostMapping("/student")
 	public ResponseEntity<UserDto> registerUser(@RequestBody UserDto userDto) {
 		UserDto studentDto = this.studentServices.createStudent(userDto);
 
@@ -77,21 +77,20 @@ public class StudentController {
 		return ResponseEntity.created(uri).body(studentDto);
 	}
 
-	@GetMapping("")
+	@GetMapping("/student")
 	public ResponseEntity<List<UserDto>> getStudents() {
 		List<UserDto> students = this.studentServices.getAllStudents();
 		return new ResponseEntity<List<UserDto>>(students, HttpStatus.OK);
 	}
 
-	@PutMapping(path = "/{stuId}")
-	public ResponseEntity<?> updateStudent(@RequestBody UserDto user, @PathVariable("stuId") Integer stuId) {
-		UserDto updateStudent = this.studentServices.updateStudent(user, stuId);
+	@PutMapping(path = "/student")
+	public ResponseEntity<?> updateStudent(@RequestBody UserDto user) {
+		UserDto updateStudent = this.studentServices.updateStudent(user);
 		return ResponseEntity.status(HttpStatus.OK).body(updateStudent);
 	}
 
-	@PutMapping(path = "/profile/{stuId}", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
-	public ResponseEntity<?> uploadProfile(@RequestPart("user") String userString, @PathVariable("stuId") Integer stuId,
-			@RequestPart("profile") MultipartFile file) {
+	@PutMapping(path = "/student/profile", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+	public ResponseEntity<?> uploadProfile(@RequestPart("user") String userString,@RequestPart("profile") MultipartFile file) {
 		try {
 
 			UserDto userDto = studentServices.getJson(userString);
@@ -106,13 +105,13 @@ public class StudentController {
 
 				userDto.setProfile(uploadImage);
 
-				String dowloadUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path("/student/profile/image/")
+				String dowloadUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/v1/student/profile/image/")
 						.path(uploadImage).toUriString();
 				System.out.println(dowloadUrl);
 				userDto.setProfileUrl(dowloadUrl);
 			}
 
-			UserDto updateStudent = studentServices.updateStudent(userDto, stuId);
+			UserDto updateStudent = studentServices.updateStudent(userDto);
 			return ResponseEntity.ok(updateStudent);
 
 		} catch (Exception e) {
@@ -121,7 +120,7 @@ public class StudentController {
 		return ResponseEntity.status(INTERNAL_SERVER_ERROR).body("Something went wrong, try again");
 	}
 
-	@GetMapping(value = "/profile/image/{imageName}", produces = { MediaType.IMAGE_JPEG_VALUE })
+	@GetMapping(value = "/student/profile/image/{imageName}", produces = { MediaType.IMAGE_JPEG_VALUE })
 	public void downloadImage(@PathVariable("imageName") String imageName, HttpServletResponse response)
 			throws IOException {
 
@@ -133,7 +132,7 @@ public class StudentController {
 		StreamUtils.copy(resource, response.getOutputStream());
 	}
 
-	@DeleteMapping("/{stuId}")
+	@DeleteMapping("student/{stuId}")
 	public ResponseEntity<?> deleteStudent(@PathVariable("stuId") Integer stuId) {
 		this.studentServices.deleteStudent(stuId);
 		return ResponseEntity.ok().build();

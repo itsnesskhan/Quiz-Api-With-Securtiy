@@ -79,9 +79,9 @@ public class StudentServiceImpl implements StudentServices {
 	}
 
 	@Override
-	public UserDto updateStudent(UserDto studentDto, Integer studentid) {
-		User student = this.studentRepository.findById(studentid)
-				.orElseThrow(() -> new ResourceNotFoundException(sourceName, fieldName, studentid));
+	public UserDto updateStudent(UserDto studentDto) {
+		User student = this.studentRepository.findById(studentDto.getId())
+				.orElseThrow(() -> new ResourceNotFoundException(sourceName, fieldName, studentDto.getId()));
 		student.setName(studentDto.getName());
 		student.setEmail(studentDto.getEmail());
 		if (studentDto.getProfile()!=null) {

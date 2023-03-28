@@ -1,112 +1,220 @@
 package com.quiz.Controllers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.aspectj.lang.annotation.Before;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
-import org.springframework.security.config.annotation.web.WebSecurityConfigurer;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
-import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.quiz.Exceptions.ResourceNotFoundException;
 import com.quiz.Models.Name;
 import com.quiz.Models.UserRole;
 import com.quiz.Repository.StudentRepository;
 import com.quiz.Services.FileService;
 import com.quiz.Services.StudentServices;
-import com.quiz.config.MyUserDetailsService;
 import com.quiz.dtos.UserDto;
 
-//@SpringBootTest
-@WebMvcTest(StudentController.class)
-@AutoConfigureMockMvc
+@SpringBootTest
 public class StudentControllerTest {
-	
 
-	@Autowired
 	private MockMvc mockMvc;
-	
+
 	@MockBean
 	private StudentServices studentServices;
-	
+
 	@MockBean
 	private StudentRepository studentRepository;
-	
+
 	@MockBean
 	private FileService fileService;
-	
-	@MockBean
-	private BCryptPasswordEncoder passwordEncoder;
-	
-	@Autowired
-	private WebSecurityConfigurerAdapter webSecurityConfigurerAdapter;
-	
 
-	
-	@DisplayName("test_Get_All_Students")
-	@Test
-	@WithMockUser(username = "user", roles = "USER")
-	void testGetStudents() throws Exception {
-		
+	@Autowired
+	private WebApplicationContext context;
+
+	@Autowired
+	private ObjectMapper mapper;
+
+	private List<UserDto> userslist = new ArrayList<>();
+
+	@BeforeEach
+	private void setUp() {
+		mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+
 		HashSet<UserRole> roles = new HashSet<>();
 		UserRole role = UserRole.builder().id(101).name("STUDENT").build();
-		
 		roles.add(role);
+
+		UserDto user1 = UserDto.builder().id(1).name(Name.builder().fname("Nasser").lname("Khan").build())
+				.email("itsnesskhan@gmail.com").password("iness").roles(roles).build();
+
+		userslist.add(user1);
+
+		UserDto user2 = UserDto.builder().id(2).name(Name.builder().fname("Mohit").lname("Malve").build())
+				.email("mohitmalve@gmail.com").password("iammohit").roles(roles).build();
+
+		userslist.add(user2);
+	}
+
+	@DisplayName("test_Get_All_Students")
+	@Test
+	void testGetStudents() throws Exception {
+		
+		when(studentServices.getAllStudents()).thenReturn(List.of(userslist.get(0),userslist.get(1)));
 		
 		
-		when(studentServices.getAllStudents()).thenReturn(List.of(
-				
-				UserDto.builder()
-					.name(Name.builder().fname("Nasser").lname("Khan").build())
-					.email("itsnesskhan@gmail.com")
-					.password(passwordEncoder.encode("iness"))
-					.roles(roles)
-					.build()
-					
-				,
-				
-				UserDto.builder()
-					.name(Name.builder().fname("Mohit").lname("Malve").build())
-					.email("mohitmalve@gmail.com")
-					.password(passwordEncoder.encode("iammohit"))
-					.roles(roles)
-					.build()
-					
-				));
 		
-		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get("/student")
+		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get("/api/v1/student")
 							.accept(MediaType.APPLICATION_JSON);
 		
-		ResultActions result = mockMvc.perform(get("/student")
-				.with(SecurityMockMvcRequestPostProcessors.user("user"))
-				.contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+		String contentAsString = mockMvc.perform(request)
+				.andDo(print())
+				.andExpect(MockMvcResultMatchers.jsonPath("$.size()", Matchers.is(2)))
+				.andExpect(MockMvcResultMatchers.jsonPath("$.[0].email").value("itsnesskhan@gmail.com"))
+				.andExpect(MockMvcResultMatchers.jsonPath("$.[0].password").value("iness"))
+                .andExpect(status().isOk())
+				.andReturn().getResponse().getContentAsString();
 		
+		
+		System.out.println(contentAsString);
+		
+	}
+
+	@DisplayName("test_save_Student")
+	@Test
+	void testSaveStudent() throws Exception {
+
+		String jsonRequest = mapper.writeValueAsString(userslist.get(0));
+
+		when(studentServices.createStudent(ArgumentMatchers.any())).thenReturn(userslist.get(0));
+
+		MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+								.post("/api/v1/student")
+								.content(jsonRequest)
+								.contentType(MediaType.APPLICATION_JSON);
+
+		mockMvc.perform(request)
+				.andExpect(MockMvcResultMatchers.jsonPath("$.email", Matchers.equalTo("itsnesskhan@gmail.com")))
+				.andExpect(MockMvcResultMatchers.jsonPath("$.id", Matchers.equalTo(1)))
+				.andExpect(status().isCreated())
+				.andReturn();
+
+	}
+
+	@DisplayName("test_get_student_by_id_exist")
+	@Test
+	void testgetStudentByIdExist() throws Exception {
+		
+		when(studentServices.getStudentById(ArgumentMatchers.any())).thenReturn(userslist.get(0));
+		
+		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get("/api/v1/student/1")
+												.accept(MediaType.APPLICATION_JSON);
+		
+		mockMvc.perform(request)
+				.andExpect(MockMvcResultMatchers.jsonPath("$.email", Matchers.equalTo("itsnesskhan@gmail.com")))
+				.andExpect(MockMvcResultMatchers.jsonPath("$.id", Matchers.equalTo(1)))
+				.andExpect(status().isOk())
+				.andReturn();
+		
+		
+	}
+
+	@DisplayName("test_get_student_by_id_not_exist")
+	@Test
+	void testgetStudentByIdNotExist() throws Exception {
+		
+		when(studentServices.getStudentById(ArgumentMatchers.any())).thenThrow(new ResourceNotFoundException("student", "id", 3));
+		
+		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get("/api/v1/student/3")
+												.accept(MediaType.APPLICATION_JSON);
+		
+		mockMvc.perform(request)
+				.andExpect(status().isNotFound())
+				.andReturn();
+	}
+	
+	@DisplayName("test_update_student")
+	@Test
+	void updateStudentById() throws Exception {
+		
+		UserDto userDto = userslist.get(0);
+		
+		UserDto updatedUser = userDto.builder()
+			.name(Name.builder().fname("Nasir").lname("Khan").build())
+			.email("mnk56250@gmail.com").build();
+		
+		String jsonRequest = mapper.writeValueAsString(userslist.get(0));
+
+		when(studentServices.updateStudent(ArgumentMatchers.any())).thenReturn(updatedUser);
+		
+		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.put("/api/v1/student")
+												.content(jsonRequest)
+												.contentType(MediaType.APPLICATION_JSON)
+												.accept(MediaType.APPLICATION_JSON);
+		
+		MvcResult result = mockMvc.perform(request)
+				.andDo(print())
+				.andExpect(MockMvcResultMatchers.jsonPath("$.email", Matchers.equalTo("mnk56250@gmail.com")))
+				.andExpect(MockMvcResultMatchers.jsonPath("$.name.fname", Matchers.equalTo("Nasir")))
+				.andExpect(status().isOk())
+				.andReturn();
+		
+	}
+	
+	
+	@DisplayName("test_delete_student_if_student_exist")
+	@Test
+	void deleteStudentById() throws Exception {
+		
+		doNothing().when(studentServices).deleteStudent(ArgumentMatchers.anyInt());
+		
+		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.delete("/api/v1/student/1")
+												.contentType(MediaType.APPLICATION_JSON);
+		
+		mockMvc.perform(request)
+				.andExpect(status().isOk())
+				.andReturn();
+		verify(studentServices,times(1)).deleteStudent(1);
+	}
+	
+	@DisplayName("test_get_student_by_id_does_not_exist")
+	@Test
+	void testdeleteStudentByIdNotExist() throws Exception {
+		
+		doThrow(new ResourceNotFoundException("student", "id", 3)).when(studentServices).deleteStudent(3);
+		
+		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.delete("/api/v1/student/3")
+												.accept(MediaType.APPLICATION_JSON);
+		mockMvc.perform(request)
+				.andExpect(status().isNotFound())
+				.andReturn();
+		
+		verify(studentServices,times(1)).deleteStudent(3);
 	}
 
 }

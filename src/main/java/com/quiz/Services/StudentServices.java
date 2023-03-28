@@ -12,7 +12,7 @@ public interface StudentServices {
 
 	UserDto createStudent(UserDto student);
 	
-	UserDto updateStudent (UserDto student, Integer studentid);
+	UserDto updateStudent (UserDto student);
 	
 	void deleteStudent(Integer studentid);
 	
