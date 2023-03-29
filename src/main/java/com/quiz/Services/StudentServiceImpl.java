@@ -28,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-//@Transactional
 public class StudentServiceImpl implements StudentServices {
 
 	private static String sourceName = "Student";
@@ -46,6 +45,9 @@ public class StudentServiceImpl implements StudentServices {
 	@Autowired
 	private UserRolesRepository userRolesRepository;
 
+	
+	
+	
 	@Override
 	public UserDto getJson(String user) {
 		UserDto userJson = new UserDto();

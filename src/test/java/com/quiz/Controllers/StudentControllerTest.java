@@ -1,13 +1,23 @@
 package com.quiz.Controllers;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.net.http.HttpHeaders;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -16,20 +26,36 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.exceptions.base.MockitoException;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.mock.web.MockMultipartHttpServletRequest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quiz.Exceptions.ResourceNotFoundException;
@@ -40,18 +66,20 @@ import com.quiz.Services.FileService;
 import com.quiz.Services.StudentServices;
 import com.quiz.dtos.UserDto;
 
+
 @SpringBootTest
 public class StudentControllerTest {
 
+	
 	private MockMvc mockMvc;
 
 	@MockBean
 	private StudentServices studentServices;
 
-	@MockBean
+	@Mock
 	private StudentRepository studentRepository;
 
-	@MockBean
+	@Mock
 	private FileService fileService;
 
 	@Autowired
@@ -61,10 +89,14 @@ public class StudentControllerTest {
 	private ObjectMapper mapper;
 
 	private List<UserDto> userslist = new ArrayList<>();
+	
+	private StudentController studentController;
 
 	@BeforeEach
 	private void setUp() {
 		mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+		studentController = new StudentController(studentServices, studentRepository, fileService);
+		
 
 		HashSet<UserRole> roles = new HashSet<>();
 		UserRole role = UserRole.builder().id(101).name("STUDENT").build();
@@ -164,7 +196,7 @@ public class StudentControllerTest {
 		
 		UserDto userDto = userslist.get(0);
 		
-		UserDto updatedUser = userDto.builder()
+		UserDto updatedUser = UserDto.builder()
 			.name(Name.builder().fname("Nasir").lname("Khan").build())
 			.email("mnk56250@gmail.com").build();
 		
@@ -177,13 +209,39 @@ public class StudentControllerTest {
 												.contentType(MediaType.APPLICATION_JSON)
 												.accept(MediaType.APPLICATION_JSON);
 		
-		MvcResult result = mockMvc.perform(request)
+		mockMvc.perform(request)
 				.andDo(print())
 				.andExpect(MockMvcResultMatchers.jsonPath("$.email", Matchers.equalTo("mnk56250@gmail.com")))
 				.andExpect(MockMvcResultMatchers.jsonPath("$.name.fname", Matchers.equalTo("Nasir")))
 				.andExpect(status().isOk())
 				.andReturn();
 		
+	}
+	
+	@DisplayName("test_update_student_profile")
+	@Test
+	void updateStudentProfile() throws Exception {
+		
+			UserDto userDto = UserDto.builder()
+				.id(1)
+				.name(Name.builder().fname("Nasir").lname("Khan").build())
+				.email("mnk56250@gmail.com").build();
+		    String userJson = mapper.writeValueAsString(userDto);
+		    
+	        MultipartFile file = Mockito.mock(MultipartFile.class);
+
+		   
+	        Mockito.when(studentServices.getJson(anyString())).thenReturn(userDto);
+	        Mockito.when(fileService.uploadImage(Mockito.anyString(), Mockito.any(MultipartFile.class)))
+	               .thenReturn("user_test.jpg");
+	        Mockito.when(studentServices.updateStudent(userDto)).thenReturn(userDto);
+
+	        ResponseEntity<?> response = studentController.uploadProfile(userJson, file);
+
+	        assertNotNull(response);
+	        assertEquals(response.getStatusCode(),HttpStatus.OK);
+	        assertEquals(userDto, response.getBody());
+
 	}
 	
 	

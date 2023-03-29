@@ -48,14 +48,19 @@ import com.quiz.helper.imageUploder;
 @CrossOrigin("*")
 public class StudentController {
 
-	@Autowired
 	private StudentServices studentServices;
 
-	@Autowired
 	private StudentRepository studentRepository;
 
-	@Autowired
 	private FileService fileService;
+	
+	@Autowired
+	public StudentController(StudentServices studentServices, StudentRepository studentRepository,
+			FileService fileService) {
+		this.studentServices = studentServices;
+		this.studentRepository = studentRepository;
+		this.fileService = fileService;
+	}
 
 	private String path;
 	@Value("${project.image}")
@@ -89,7 +94,7 @@ public class StudentController {
 		return ResponseEntity.status(HttpStatus.OK).body(updateStudent);
 	}
 
-	@PutMapping(path = "/student/profile", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+	@PostMapping(path = "/student/profile")
 	public ResponseEntity<?> uploadProfile(@RequestPart("user") String userString,@RequestPart("profile") MultipartFile file) {
 		try {
 
@@ -105,8 +110,8 @@ public class StudentController {
 
 				userDto.setProfile(uploadImage);
 
-				String dowloadUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/v1/student/profile/image/")
-						.path(uploadImage).toUriString();
+					String dowloadUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/v1/student/profile/image/")
+							.path(uploadImage).toUriString();
 				System.out.println(dowloadUrl);
 				userDto.setProfileUrl(dowloadUrl);
 			}
