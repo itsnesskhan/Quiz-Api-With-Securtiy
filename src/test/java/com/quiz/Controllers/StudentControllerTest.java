@@ -1,5 +1,6 @@
 package com.quiz.Controllers;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -218,7 +220,7 @@ public class StudentControllerTest {
 		
 	}
 	
-	@DisplayName("test_update_student_profile")
+	@DisplayName("test_update_student_profile_mockito")
 	@Test
 	void updateStudentProfile() throws Exception {
 		
@@ -243,6 +245,42 @@ public class StudentControllerTest {
 	        assertEquals(userDto, response.getBody());
 
 	}
+	
+	@DisplayName("test_update_student_profile_mockmvc")
+	@Test
+    public void testUploadProfile() throws Exception {
+
+        String userString = "{\r\n"
+        		+ "    \"id\": 1,\r\n"
+        		+ "    \"name\": {\r\n"
+        		+ "        \"fname\": \"Nasser\",\r\n"
+        		+ "        \"lname\": \"Khan\"\r\n"
+        		+ "    },\r\n"
+        		+ "    \"email\": \"itsnesskhan@gmail.com\",\r\n"
+        		+ "}";
+        
+        MockMultipartFile file = new MockMultipartFile("profile", "profile.jpg", MediaType.IMAGE_JPEG_VALUE,
+                "profile".getBytes());
+        
+        when(studentServices.getJson(userString)).thenReturn(userslist.get(0));
+        when(studentServices.updateStudent(userslist.get(0))).thenReturn(userslist.get(0));
+
+        MvcResult mvcResult = mockMvc.perform(multipart("/api/v1/student/profile")
+                .file(file)
+                .file("user", userString.getBytes()))
+        		.andDo(print())
+                .andExpect(status().isOk())
+                .andReturn();
+        
+        String responseBody = mvcResult.getResponse().getContentAsString();
+        UserDto updatedUserDto = mapper.readValue(responseBody, UserDto.class);
+        System.out.println("Updated user: " + updatedUserDto);
+        
+        assertThat(updatedUserDto.getEmail()).isEqualTo(userslist.get(0).getEmail());
+        assertThat(updatedUserDto.getProfileUrl()).isNotNull();
+        assertThat(updatedUserDto.getProfileUrl()).contains("student/profile/image/");
+
+    }
 	
 	
 	@DisplayName("test_delete_student_if_student_exist")
