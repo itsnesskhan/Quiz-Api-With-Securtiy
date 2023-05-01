@@ -1,0 +1,36 @@
+version: '3'
+services:
+  db-service:
+    container_name: mysqldb
+    image: mysql
+    volumes:
+        - myvolume:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: quizapp
+    ports:
+      - "3307:3306"
+    networks:
+      - spring-net
+  quiz-service:
+    container_name: quiz-service
+    image: itsnesskhan/spring-quiz-webservice:0.2
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-service:3306/quizapp?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL-AUTO: update
+      SPRING_JPA_SHOW-SQL: "true"
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+    ports:
+      - "9090:8080"
+    networks:
+      - spring-net  
+    depends_on:
+      - db-service        
+
+networks:
+  spring-net:
+
+volumes:
+  myvolume:

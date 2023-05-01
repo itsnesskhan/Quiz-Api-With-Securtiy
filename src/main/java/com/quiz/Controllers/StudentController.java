@@ -102,8 +102,8 @@ public class StudentController {
 			System.out.println(userDto);
 			if (!file.isEmpty()) {
 
-				path = new ClassPathResource("static/images").getFile().getAbsolutePath();
-
+//				path = new ClassPathResource("static/images").getFile().getAbsolutePath();
+				path = new ClassPathResource("static/images").getPath();
 				final String UPLOAD_DIR = path + File.separator + "profile";
 
 				String uploadImage = fileService.uploadImage(UPLOAD_DIR, file);
