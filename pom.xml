@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>com.quiz</groupId>
 	<artifactId>Quiz-App</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.1</version>
 	<name>Quiz-App</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
@@ -104,8 +104,10 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+
 			</plugin>
 		</plugins>
+		<finalName>spring-jenkins-integration</finalName>
 	</build>
 
 </project>

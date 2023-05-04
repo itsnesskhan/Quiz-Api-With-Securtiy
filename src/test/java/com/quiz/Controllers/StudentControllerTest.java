@@ -246,9 +246,9 @@ public class StudentControllerTest {
 
 	}
 	
-//	@DisplayName("test_update_student_profile_mockmvc")
-//	@Test
-//    public void testUploadProfile() throws Exception {
+	@DisplayName("test_update_student_profile_mockmvc")
+	@Test
+    public void testUploadProfile() throws Exception {
 //
 //        String userString = "{\r\n"
 //        		+ "    \"id\": 1,\r\n"
@@ -262,7 +262,7 @@ public class StudentControllerTest {
 //        MockMultipartFile file = new MockMultipartFile("profile", "profile.jpg", MediaType.IMAGE_JPEG_VALUE,
 //                "profile".getBytes());
 //        
-//        when(fileService.uploadImage("/static/images", file)).thenReturn("profile.jpg");
+//        when(fileService.uploadImage(anyString(), any(MultipartFile.class))).thenReturn("profile.jpg");
 //        when(studentServices.getJson(userString)).thenReturn(userslist.get(0));
 //        when(studentServices.updateStudent(userslist.get(0))).thenReturn(userslist.get(0));
 //
@@ -280,8 +280,8 @@ public class StudentControllerTest {
 //        assertThat(updatedUserDto.getEmail()).isEqualTo(userslist.get(0).getEmail());
 //        assertThat(updatedUserDto.getProfileUrl()).isNotNull();
 //        assertThat(updatedUserDto.getProfileUrl()).contains("student/profile/image/");
-//
-//    }
+
+    }
 
 	
 	

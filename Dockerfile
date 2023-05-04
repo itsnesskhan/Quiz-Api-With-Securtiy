@@ -6,6 +6,6 @@ WORKDIR /app
 
 CMD [ "mkdir static", "cd static", "mkdir images" ]
 
-COPY target/Quiz-App-0.0.1-SNAPSHOT.jar /app/spring-quiz-webservice.jar
+COPY target/Quiz-App-0.0.1-SNAPSHOT.jar /app/spring-jenkins-integration.jar
 
-ENTRYPOINT [ "java","-jar", "spring-quiz-webservice.jar" ]
+ENTRYPOINT [ "java","-jar", "spring-jenkins-integration" ]
